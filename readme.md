@@ -66,6 +66,9 @@
 - 相机到IMU坐标系的旋转矩阵
 - 相机到IMU坐标系的平移矩阵
 
+该项目的旋转关系如图所示
+<img src="./image/extrinsic_param.png" style="zoom:25%;" />
+
 参数设置
 
 * 检查飞控mavros连接正常
