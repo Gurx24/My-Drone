@@ -178,6 +178,9 @@ mavros 的坐标变换关系主要分为有三种：东北天坐标系（ENU）�
 
 以 D435i 相机和 Pixhawk 6C飞控为工具，尝试缕清 mavros 中的坐标系与VINS-Fusion里程计中的坐标系之间的关系。
 
+D435i相机的成像坐标系和IMU坐标系定义如下，Z和X分别为相机前面：
+![](./image/D435i坐标系.png)
+
 由于 mavros 中常用的坐标系有**global 坐标系，local坐标系，body坐标系**，其中 global 坐标系指的是经纬度坐标，常在使用 GPS 时才会产生（应用较少），因此主要关注 local 坐标系和 body 坐标系
 
 首先启动mavros节点，终端输入：
