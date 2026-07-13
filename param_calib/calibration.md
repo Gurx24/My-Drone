@@ -4,6 +4,12 @@
 
 在Ubuntu20.04 ROS noetic上安装
 
+查看d435i相机的出厂内参
+
+```bash
+rs-enumerate-devices -c
+```
+
 ## 一、IMU内参标定
 
 安装使用imu_utils包进行IMU内参标定，可以校准IMU的噪声密度和随机游走噪声
@@ -187,10 +193,12 @@ rqt_image_view   #查看图像
 # 根据自己相机话题自行设置
 rosrun topic_tools throttle messages /camera/infra1/image_rect_raw 4.0 /infra_left #左目设置为4hz
 rosrun topic_tools throttle messages /camera/infra2/image_rect_raw 4.0 /infra_right #右目设置为4hz
-rosbag record -O double_cam_1 /infra_left /infra_right #录左右目数据包
+rosbag record -O stereo.bag /infra_left /infra_right #录左右目数据包
 ```
 
 录制动作要缓慢，尽量使标定板能够到达相机边缘但是不要超出相机视野
+
+四个维度移动，前后左右上下及倾斜
 
 ### 4 标定
 
@@ -220,3 +228,53 @@ rosrun kalibr kalibr_calibrate_cameras --target /home/camera_data/april_6x6_80x8
 
 ## 三、相机imu联合标定
 
+收集前面得到的结果
+
+将imu标定文件改为下面格式：
+
+```yaml
+#Accelerometers
+accelerometer_noise_density: 1.7893452919534023e-02  #Noise density (continuous-time)
+accelerometer_random_walk:   2.9022924848606969e-04  #Bias random walk
+ 
+#Gyroscopes
+gyroscope_noise_density:     3.4740478430155485e-03   #Noise density (continuous-time)
+gyroscope_random_walk:       2.1064767700663592e-05  #Bias random walk
+ 
+rostopic:                    /imu      #the IMU ROS topic
+update_rate:                 200.0      #Hz (for discretization of the values above)
+```
+
+调整相机的发布频率为20Hz，imu为200hz
+
+```bash
+rosrun topic_tools throttle messages /camera/infra1/image_rect_raw 4.0 /infra_left
+rosrun topic_tools throttle messages /camera/infra2/image_rect_raw 4.0 /infra_right
+rosrun topic_tools throttle messages /camera/imu 200.0 /imu
+```
+
+录制数据
+
+```bash
+rosbag record /infra_left /infra_right /imu -O /路径/stereo_imu.bag
+```
+
+开始标定
+
+```bash
+rosrun kalibr kalibr_calibrate_imu_camera \
+--target /path/april_6x6_A4.yaml \
+--bag  /path/stereo_imu.bag \
+--cam /path/stereo.yaml \
+--imu /path/imu.yaml \
+--bag-from-to 10 50 --show-extraction
+```
+
+参数解释
+
+--targt 标定板的配置文件路径
+--bag 采集的数据包的路径
+--cam 标定好的相机的参数文件
+--imu 标定好的 imu 的参数文件
+--bag-from-to 处理bag中指定时间段的数据（时间太长要等很久而且结果可能退化）
+--show-extraction 表示显示检测特征点的过程
